@@ -86,6 +86,14 @@ char *curly = ":D";
 #include "driver-avalon7.h"
 #endif
 
+#ifdef USE_AVALON8
+#include "driver-avalon8.h"
+#endif
+
+#ifdef USE_AVALON9
+#include "driver-avalon9.h"
+#endif
+
 #ifdef USE_AVALON_MINER
 #include "driver-avalon-miner.h"
 #endif
@@ -113,6 +121,12 @@ char *curly = ":D";
 #ifdef USE_BITFURY16
 #include "driver-bitfury16.h"
 #endif
+
+#ifdef USE_BITMAIN_SOC
+#include <sys/sysinfo.h>
+#include "driver-btm-soc.h"
+#endif
+
 
 #ifdef USE_COINTERRA
 #include "driver-cointerra.h"
@@ -267,6 +281,20 @@ static char *opt_set_avalon7_voltage_level;
 static char *opt_set_avalon7_voltage_offset;
 static char *opt_set_avalon7_freq;
 #endif
+#ifdef USE_AVALON8
+static char *opt_set_avalon8_fan;
+static char *opt_set_avalon8_voltage_level;
+static char *opt_set_avalon8_voltage_level_offset;
+static char *opt_set_avalon8_freq;
+static char *opt_set_avalon8_asic_otp;
+#endif
+#ifdef USE_AVALON9
+static char *opt_set_avalon9_fan;
+static char *opt_set_avalon9_voltage_level;
+static char *opt_set_avalon9_voltage_level_offset;
+static char *opt_set_avalon9_freq;
+static char *opt_set_avalon9_adjust_volt_info;
+#endif
 #ifdef USE_AVALON_MINER
 static char *opt_set_avalonm_voltage;
 static char *opt_set_avalonm_freq;
@@ -409,6 +437,24 @@ pthread_cond_t gws_cond;
 double rolling1, rolling5, rolling15;
 double total_rolling;
 double total_mhashes_done;
+
+#ifdef USE_BITMAIN_SOC
+char *opt_version_path = NULL;
+char displayed_hash_rate[16] = {0};
+char nonce_num10_string[NONCE_BUFF];
+char nonce_num30_string[NONCE_BUFF];
+char nonce_num60_string[NONCE_BUFF];
+char g_miner_version[256] = {0};
+char g_miner_compiletime[256] = {0};
+char g_miner_type[256] = {0};
+
+double new_total_mhashes_done;
+double new_total_secs = 1.0;
+// only used for total_secs, because we need use system info time, instead of real data time.
+time_t total_tv_start_sys;
+time_t total_tv_end_sys;
+#endif
+
 static struct timeval total_tv_start, total_tv_end;
 static struct timeval restart_tv_start, update_tv_start;
 
@@ -849,6 +895,23 @@ static char *set_int_1_to_65535(const char *arg, int *i)
 	return set_int_range(arg, i, 1, 65535);
 }
 
+#if defined(USE_AVALON8) || defined(USE_AVALON9)
+static char *set_int_0_to_1(const char *arg, int *i)
+{
+	return set_int_range(arg, i, 0, 1);
+}
+
+static char *set_int_0_to_7(const char *arg, int *i)
+{
+	return set_int_range(arg, i, 0, 7);
+}
+
+static char *set_int_0_to_32767(const char *arg, int *i)
+{
+	return set_int_range(arg, i, 0, 32767);
+}
+#endif
+
 static char *set_int_0_to_5(const char *arg, int *i)
 {
 	return set_int_range(arg, i, 0, 5);
@@ -931,6 +994,11 @@ static char *set_int_24_to_32(const char *arg, int *i)
 static char __maybe_unused *set_int_0_to_2(const char *arg, int *i)
 {
 	return set_int_range(arg, i, 0, 2);
+}
+
+static char __maybe_unused *set_int_0_to_3(const char *arg, int *i)
+{
+	return set_int_range(arg, i, 0, 3);
 }
 
 static char __maybe_unused *set_int_0_to_4(const char *arg, int *i)
@@ -1272,6 +1340,15 @@ static char *set_null(const char __maybe_unused *arg)
 	return NULL;
 }
 
+#ifdef USE_BITMAIN_SOC
+static char *set_version_path(const char *arg)
+{
+    opt_set_charp(arg, &opt_version_path);
+
+    return NULL;
+}
+#endif
+
 /* These options are available from config file or commandline */
 static struct opt_table opt_config_table[] = {
 #ifdef USE_ICARUS
@@ -1502,6 +1579,253 @@ static struct opt_table opt_config_table[] = {
 		     opt_set_invbool, &opt_avalon7_asic_debug,
 		     "Disable A3212 debug."),
 #endif
+#ifdef USE_AVALON8
+	OPT_WITH_CBARG("--avalon8-voltage-level",
+		     set_avalon8_voltage_level, NULL, &opt_set_avalon8_voltage_level,
+		     "Set Avalon8 default level of core voltage, range:[0, 15], step: 1"),
+	OPT_WITH_CBARG("--avalon8-voltage-level-offset",
+		     set_avalon8_voltage_level_offset, NULL, &opt_set_avalon8_voltage_level_offset,
+		     "Set Avalon8 default offset of core voltage level, range:[-2, 1], step: 1"),
+	OPT_WITH_CBARG("--avalon8-freq",
+		     set_avalon8_freq, NULL, &opt_set_avalon8_freq,
+		     "Set Avalon8 default frequency, range:[25, 1200], step: 25, example: 800"),
+	OPT_WITH_ARG("--avalon8-freq-sel",
+		     set_int_0_to_7, opt_show_intval, &opt_avalon8_freq_sel,
+		     "Set Avalon8 default frequency select, range:[0, 7], step: 1, example: 7"),
+	OPT_WITH_CBARG("--avalon8-fan",
+		     set_avalon8_fan, NULL, &opt_set_avalon8_fan,
+		     "Set Avalon8 target fan speed, range:[0, 100], step: 1, example: 0-100"),
+	OPT_WITH_ARG("--avalon8-temp",
+		     set_int_0_to_100, opt_show_intval, &opt_avalon8_temp_target,
+		     "Set Avalon8 target temperature, range:[0, 100]"),
+	OPT_WITH_ARG("--avalon8-polling-delay",
+		     set_int_1_to_65535, opt_show_intval, &opt_avalon8_polling_delay,
+		     "Set Avalon8 polling delay value (ms)"),
+	OPT_WITH_ARG("--avalon8-aucspeed",
+		     opt_set_intval, opt_show_intval, &opt_avalon8_aucspeed,
+		     "Set AUC3 IIC bus speed"),
+	OPT_WITH_ARG("--avalon8-aucxdelay",
+		     opt_set_intval, opt_show_intval, &opt_avalon8_aucxdelay,
+		     "Set AUC3 IIC xfer read delay, 4800 ~= 1ms"),
+	OPT_WITH_ARG("--avalon8-smart-speed",
+		     opt_set_intval, opt_show_intval, &opt_avalon8_smart_speed,
+		     "Set Avalon8 smart speed, range 0-1. 0 means Disable"),
+	OPT_WITH_ARG("--avalon8-th-pass",
+		     set_int_0_to_65535, opt_show_intval, &opt_avalon8_th_pass,
+		     "Set A3210 th pass value"),
+	OPT_WITH_ARG("--avalon8-th-fail",
+		     set_int_0_to_65535, opt_show_intval, &opt_avalon8_th_fail,
+		     "Set A3210 th fail value"),
+	OPT_WITH_ARG("--avalon8-th-init",
+		     set_int_0_to_65535, opt_show_intval, &opt_avalon8_th_init,
+		     "Set A3210 th init value"),
+	OPT_WITH_ARG("--avalon8-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon8_th_ms,
+		     "Set A3210 th ms value"),
+	OPT_WITH_ARG("--avalon8-th-timeout",
+		     opt_set_uintval, opt_show_uintval, &opt_avalon8_th_timeout,
+		     "Set A3210 th timeout value"),
+	OPT_WITH_ARG("--avalon8-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon8_th_add,
+		     "Set A3210 th add value"),
+	OPT_WITH_ARG("--avalon8-th-mssel",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon8_th_mssel,
+		     "Set A3210 th mssel value"),
+	OPT_WITH_ARG("--avalon8-lv2-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon8_lv2_th_add,
+		     "Set A3210 lv2 th add value"),
+	OPT_WITH_ARG("--avalon8-lv2-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon8_lv2_th_ms,
+		     "Set A3210 lv2 th ms value"),
+	OPT_WITH_ARG("--avalon8-lv3-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon8_lv3_th_add,
+		     "Set A3210 lv3 th add value"),
+	OPT_WITH_ARG("--avalon8-lv3-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon8_lv3_th_ms,
+		     "Set A3210 lv3 th ms value"),
+	OPT_WITH_ARG("--avalon8-lv4-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon8_lv4_th_add,
+		     "Set A3210 lv4 th add value"),
+	OPT_WITH_ARG("--avalon8-lv4-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon8_lv4_th_ms,
+		     "Set A3210 lv4 th ms value"),
+	OPT_WITH_ARG("--avalon8-lv5-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon8_lv5_th_add,
+		     "Set A3210 lv5 th add value"),
+	OPT_WITH_ARG("--avalon8-lv5-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon8_lv5_th_ms,
+		     "Set A3210 lv5 th ms value"),
+	OPT_WITH_ARG("--avalon8-lv6-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon8_lv6_th_add,
+		     "Set A3210 lv6 th add value"),
+	OPT_WITH_ARG("--avalon8-lv6-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon8_lv6_th_ms,
+		     "Set A3210 lv6 th ms value"),
+	OPT_WITH_ARG("--avalon8-lv7-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon8_lv7_th_add,
+		     "Set A3210 lv7 th add value"),
+	OPT_WITH_ARG("--avalon8-lv7-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon8_lv7_th_ms,
+		     "Set A3210 lv7 th ms value"),
+	OPT_WITHOUT_ARG("--avalon8-iic-detect",
+		     opt_set_bool, &opt_avalon8_iic_detect,
+		     "Enable Avalon8 detect through iic controller"),
+	OPT_WITH_ARG("--avalon8-nonce-mask",
+		     set_int_24_to_32, opt_show_intval, &opt_avalon8_nonce_mask,
+		     "Set A3210 nonce mask, range 24-32."),
+	OPT_WITH_ARG("--avalon8-nonce-check",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon8_nonce_check,
+		     "Set A3210 nonce check, range 0-1."),
+	OPT_WITH_ARG("--avalon8-roll-enable",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon8_roll_enable,
+		     "Set A3210 roll enable, range 0-1."),
+	OPT_WITH_ARG("--avalon8-mux-l2h",
+		     set_int_0_to_2, opt_show_intval, &opt_avalon8_mux_l2h,
+		     "Set Avalon8 mux l2h, range 0-2."),
+	OPT_WITH_ARG("--avalon8-mux-h2l",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon8_mux_h2l,
+		     "Set Avalon8 mux h2l, range 0-1."),
+	OPT_WITH_ARG("--avalon8-h2ltime0-spd",
+		     set_int_0_to_255, opt_show_intval, &opt_avalon8_h2ltime0_spd,
+		     "Set Avalon8 h2ltime0 spd, range 0-255."),
+	OPT_WITH_ARG("--avalon8-spdlow",
+		     set_int_0_to_7, opt_show_intval, &opt_avalon8_spdlow,
+		     "Set Avalon8 spdlow, range 0-7."),
+	OPT_WITH_ARG("--avalon8-spdhigh",
+		     set_int_0_to_7, opt_show_intval, &opt_avalon8_spdhigh,
+		     "Set Avalon8 spdhigh, range 0-7."),
+#endif
+#ifdef USE_AVALON9
+	OPT_WITH_CBARG("--avalon9-voltage-level",
+		     set_avalon9_voltage_level, NULL, &opt_set_avalon9_voltage_level,
+		     "Set Avalon9 default level of core voltage, range:[0, 15], step: 1"),
+	OPT_WITH_CBARG("--avalon9-voltage-level-offset",
+		     set_avalon9_voltage_level_offset, NULL, &opt_set_avalon9_voltage_level_offset,
+		     "Set Avalon9 default offset of core voltage level, range:[-2, 1], step: 1"),
+	OPT_WITH_CBARG("--avalon9-freq",
+		     set_avalon9_freq, NULL, &opt_set_avalon9_freq,
+		     "Set Avalon9 default frequency, range:[25, 1200], step: 25, example: 800"),
+	OPT_WITH_ARG("--avalon9-freq-sel",
+		     set_int_0_to_7, opt_show_intval, &opt_avalon9_freq_sel,
+		     "Set Avalon9 default frequency select, range:[0, 7], step: 1, example: 7"),
+	OPT_WITH_CBARG("--avalon9-fan",
+		     set_avalon9_fan, NULL, &opt_set_avalon9_fan,
+		     "Set Avalon9 target fan speed, range:[0, 100], step: 1, example: 0-100"),
+	OPT_WITH_ARG("--avalon9-temp",
+		     set_int_0_to_100, opt_show_intval, &opt_avalon9_temp_target,
+		     "Set Avalon9 target temperature, range:[0, 100]"),
+	OPT_WITH_ARG("--avalon9-polling-delay",
+		     set_int_1_to_65535, opt_show_intval, &opt_avalon9_polling_delay,
+		     "Set Avalon9 polling delay value (ms)"),
+	OPT_WITH_ARG("--avalon9-aucspeed",
+		     opt_set_intval, opt_show_intval, &opt_avalon9_aucspeed,
+		     "Set AUC3 IIC bus speed"),
+	OPT_WITH_ARG("--avalon9-aucxdelay",
+		     opt_set_intval, opt_show_intval, &opt_avalon9_aucxdelay,
+		     "Set AUC3 IIC xfer read delay, 4800 ~= 1ms"),
+	OPT_WITH_ARG("--avalon9-smart-speed",
+		     opt_set_intval, opt_show_intval, &opt_avalon9_smart_speed,
+		     "Set Avalon9 smart speed, range 0-1. 0 means Disable"),
+	OPT_WITH_ARG("--avalon9-th-pass",
+		     set_int_0_to_65535, opt_show_intval, &opt_avalon9_th_pass,
+		     "Set A3206 th pass value"),
+	OPT_WITH_ARG("--avalon9-th-fail",
+		     set_int_0_to_65535, opt_show_intval, &opt_avalon9_th_fail,
+		     "Set A3206 th fail value"),
+	OPT_WITH_ARG("--avalon9-th-init",
+		     set_int_0_to_65535, opt_show_intval, &opt_avalon9_th_init,
+		     "Set A3206 th init value"),
+	OPT_WITH_ARG("--avalon9-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon9_th_ms,
+		     "Set A3206 th ms value"),
+	OPT_WITH_ARG("--avalon9-th-timeout",
+		     opt_set_uintval, opt_show_uintval, &opt_avalon9_th_timeout,
+		     "Set A3206 th timeout value"),
+	OPT_WITH_ARG("--avalon9-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon9_th_add,
+		     "Set A3206 th add value"),
+	OPT_WITH_ARG("--avalon9-th-mssel",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon9_th_mssel,
+		     "Set A3206 th mssel value"),
+	OPT_WITH_ARG("--avalon9-lv2-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon9_lv2_th_add,
+		     "Set A3206 lv2 th add value"),
+	OPT_WITH_ARG("--avalon9-lv2-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon9_lv2_th_ms,
+		     "Set A3206 lv2 th ms value"),
+	OPT_WITH_ARG("--avalon9-lv3-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon9_lv3_th_add,
+		     "Set A3206 lv3 th add value"),
+	OPT_WITH_ARG("--avalon9-lv3-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon9_lv3_th_ms,
+		     "Set A3206 lv3 th ms value"),
+	OPT_WITH_ARG("--avalon9-lv4-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon9_lv4_th_add,
+		     "Set A3206 lv4 th add value"),
+	OPT_WITH_ARG("--avalon9-lv4-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon9_lv4_th_ms,
+		     "Set A3206 lv4 th ms value"),
+	OPT_WITH_ARG("--avalon9-lv5-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon9_lv5_th_add,
+		     "Set A3206 lv5 th add value"),
+	OPT_WITH_ARG("--avalon9-lv5-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon9_lv5_th_ms,
+		     "Set A3206 lv5 th ms value"),
+	OPT_WITH_ARG("--avalon9-lv6-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon9_lv6_th_add,
+		     "Set A3206 lv6 th add value"),
+	OPT_WITH_ARG("--avalon9-lv6-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon9_lv6_th_ms,
+		     "Set A3206 lv6 th ms value"),
+	OPT_WITH_ARG("--avalon9-lv7-th-add",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon9_lv7_th_add,
+		     "Set A3206 lv7 th add value"),
+	OPT_WITH_ARG("--avalon9-lv7-th-ms",
+		     set_int_0_to_32767, opt_show_intval, &opt_avalon9_lv7_th_ms,
+		     "Set A3206 lv7 th ms value"),
+	OPT_WITHOUT_ARG("--avalon9-iic-detect",
+		     opt_set_bool, &opt_avalon9_iic_detect,
+		     "Enable Avalon9 detect through iic controller"),
+	OPT_WITH_ARG("--avalon9-nonce-mask",
+		     set_int_24_to_32, opt_show_intval, &opt_avalon9_nonce_mask,
+		     "Set A3206 nonce mask, range 24-32."),
+	OPT_WITH_ARG("--avalon9-nonce-check",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon9_nonce_check,
+		     "Set A3206 nonce check, range 0-1."),
+	OPT_WITH_ARG("--avalon9-roll-enable",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon9_roll_enable,
+		     "Set A3206 roll enable, range 0-1."),
+	OPT_WITH_ARG("--avalon9-mux-l2h",
+		     set_int_0_to_2, opt_show_intval, &opt_avalon9_mux_l2h,
+		     "Set Avalon9 mux l2h, range 0-2."),
+	OPT_WITH_ARG("--avalon9-mux-h2l",
+		     set_int_0_to_1, opt_show_intval, &opt_avalon9_mux_h2l,
+		     "Set Avalon9 mux h2l, range 0-1."),
+	OPT_WITH_ARG("--avalon9-h2ltime0-spd",
+		     set_int_0_to_255, opt_show_intval, &opt_avalon9_h2ltime0_spd,
+		     "Set Avalon9 h2ltime0 spd, range 0-255."),
+	OPT_WITH_ARG("--avalon9-spdlow",
+		     set_int_0_to_7, opt_show_intval, &opt_avalon9_spdlow,
+		     "Set Avalon9 spdlow, range 0-7."),
+	OPT_WITH_ARG("--avalon9-spdhigh",
+		     set_int_0_to_7, opt_show_intval, &opt_avalon9_spdhigh,
+		     "Set Avalon9 spdhigh, range 0-7."),
+	OPT_WITH_ARG("--avalon9-tbase",
+		     set_int_0_to_255, opt_show_intval, &opt_avalon9_tbase,
+		     "Set Avalon9 tbase and use (0-8) bits, range 0-255."),
+	OPT_WITH_ARG("--avalon9-pid-p",
+		     set_int_0_to_9999, opt_show_intval, &opt_avalon9_pid_p,
+		     "Set Avalon9 pid-p, range 0-9999."),
+	OPT_WITH_ARG("--avalon9-pid-i",
+		     set_int_0_to_9999, opt_show_intval, &opt_avalon9_pid_i,
+		     "Set Avalon9 pid-i, range 0-9999."),
+	OPT_WITH_ARG("--avalon9-pid-d",
+		     set_int_0_to_9999, opt_show_intval, &opt_avalon9_pid_d,
+		     "Set Avalon9 pid-d, range 0-9999."),
+	OPT_WITH_CBARG("--avalon9-adjust-volt-info",
+		     set_avalon9_adjust_volt_info, NULL, &opt_set_avalon9_adjust_volt_info,
+		     "Set Avalon9 adjust volt info, range 0-9999"),
+#endif
 #ifdef USE_AVALON_MINER
 	OPT_WITH_CBARG("--avalonm-voltage",
 		     set_avalonm_voltage, NULL, &opt_set_avalonm_voltage,
@@ -1680,6 +2004,39 @@ static struct opt_table opt_config_table[] = {
 	OPT_WITH_ARG("--bf16-alarm-temp",
 		     set_int_0_to_100, NULL, &opt_bf16_alarm_temp,
 		     "Set control board alarm temperature range (0 - 100)"),
+#endif
+#ifdef USE_BITMAIN_SOC
+	OPT_WITH_ARG("--version-file",
+	set_version_path, NULL, opt_hidden,
+	"Set miner version file"),
+	
+	OPT_WITHOUT_ARG("--bitmain-fan-ctrl",
+	opt_set_bool, &opt_bitmain_fan_ctrl,
+	"Enable bitmain miner fan controlling"),
+
+	OPT_WITH_ARG("--bitmain-fan-pwm",
+	set_int_0_to_100, opt_show_intval, &opt_bitmain_fan_pwm,
+	"Set bitmain fan pwm percentage 0~100"),
+
+	OPT_WITH_ARG("--bitmain-freq",
+	set_int_0_to_9999,opt_show_intval, &opt_bitmain_soc_freq,
+	"Set frequency"),
+
+	OPT_WITH_ARG("--bitmain-voltage",
+	set_int_0_to_9999,opt_show_intval, &opt_bitmain_soc_voltage,
+	"Set voltage"),
+
+	OPT_WITHOUT_ARG("--fixed-freq",
+	opt_set_bool, &opt_fixed_freq,
+	"Set bitmain miner use fixed freq"),
+
+	OPT_WITHOUT_ARG("--no-pre-heat",
+	opt_set_false, &opt_pre_heat,
+	"Set bitmain miner doesn't pre heat"),
+
+	OPT_WITH_ARG("--multi-version",
+	opt_set_intval, NULL, &opt_multi_version,
+	"Multi version mining!"),
 #endif
 #ifdef USE_BLOCKERUPTER
         OPT_WITH_ARG("--bet-clk",
@@ -2293,6 +2650,12 @@ static char *opt_verusage_and_exit(const char *extra)
 #endif
 #ifdef USE_AVALON7
 		"avalon7 "
+#endif
+#ifdef USE_AVALON8
+		"avalon8 "
+#endif
+#ifdef USE_AVALON9
+		"avalon9 "
 #endif
 #ifdef USE_AVALON_MINER
 		"avalon miner"
@@ -4854,6 +5217,9 @@ static void _copy_work(struct work *work, const struct work *base_work, int noff
 	}
 	if (base_work->coinbase)
 		work->coinbase = strdup(base_work->coinbase);
+#ifdef USE_BITMAIN_SOC
+	work->version = base_work->version;
+#endif
 }
 
 void set_work_ntime(struct work *work, int ntime)
@@ -5252,8 +5618,8 @@ static void set_blockdiff(const struct work *work)
 {
 	uint8_t pow = work->data[72];
 	int powdiff = (8 * (0x1d - 3)) - (8 * (pow - 3));
-	if (powdiff < 8)
-		powdiff = 8;
+	if (powdiff < 0)
+		powdiff = 0;
 	uint32_t diff32 = be32toh(*((uint32_t *)(work->data + 72))) & 0x00FFFFFF;
 	double numerator = 0xFFFFULL << powdiff;
 	double ddiff = numerator / (double)diff32;
@@ -5694,7 +6060,20 @@ static time_t hashdisplay_t;
 void zero_stats(void)
 {
 	int i;
+#ifdef USE_BITMAIN_SOC
+	struct sysinfo sInfo;
+	if (sysinfo(&sInfo))
+	{
+		applog(LOG_INFO, "Failed to get sysinfo, errno:%u, reason:%s\n",
+			   errno, strerror(errno));
+		total_tv_start_sys=time(NULL);
+	}
+	else
+	{
+		total_tv_start_sys=sInfo.uptime;
+	}
 
+#endif
 	cgtime(&total_tv_start);
 	copy_time(&tv_hashmeter, &total_tv_start);
 	total_rolling = 0;
@@ -5702,6 +6081,9 @@ void zero_stats(void)
 	rolling5 = 0;
 	rolling15 = 0;
 	total_mhashes_done = 0;
+#ifdef USE_BITMAIN_SOC
+	new_total_mhashes_done = 0;
+#endif
 	total_getworks = 0;
 	total_accepted = 0;
 	total_rejected = 0;
@@ -5712,6 +6094,9 @@ void zero_stats(void)
 	total_go = 0;
 	total_ro = 0;
 	total_secs = 1.0;
+#ifdef USE_BITMAIN_SOC
+	new_total_secs = 1.0;
+#endif
 	total_diff1 = 0;
 	found_blocks = 0;
 	total_diff_accepted = 0;
@@ -6415,6 +6800,20 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 	time_t now_t;
 	int diff_t;
 
+#ifdef USE_BITMAIN_SOC
+	struct sysinfo sInfo;
+	if (sysinfo(&sInfo))
+	{
+		applog(LOG_INFO, "Failed to get sysinfo, errno:%u, reason:%s\n",
+			   errno, strerror(errno));
+		total_tv_end_sys=time(NULL);
+	}
+	else
+	{
+		total_tv_end_sys=sInfo.uptime;
+	}
+#endif
+
 	cgtime(&total_tv_end);
 	tv_tdiff = tdiff(&total_tv_end, &tv_hashmeter);
 	now_t = total_tv_end.tv_sec;
@@ -6489,7 +6888,11 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 	decay_time(&rolling5, hashes_done, tv_tdiff, 300.0);
 	decay_time(&rolling15, hashes_done, tv_tdiff, 900.0);
 	global_hashrate = llround(total_rolling) * 1000000;
+#ifndef USE_BITMAIN_SOC
 	total_secs = tdiff(&total_tv_end, &total_tv_start);
+#else
+	total_secs = total_tv_end_sys*1.0-total_tv_start_sys*1.0;
+#endif
 	if (showlog) {
 		char displayed_hashes[16], displayed_rolling[16];
 		char displayed_r1[16], displayed_r5[16], displayed_r15[16];
@@ -7454,7 +7857,7 @@ void set_target(unsigned char *dest_target, double diff)
 	cg_memcpy(dest_target, target, 32);
 }
 
-#if defined (USE_AVALON2) || defined (USE_AVALON4) || defined (USE_AVALON7) || defined (USE_AVALON_MINER) || defined (USE_HASHRATIO)
+#if defined (USE_AVALON2) || defined (USE_AVALON4) || defined (USE_AVALON7) || defined (USE_AVALON8) || defined (USE_AVALON9) || defined (USE_AVALON_MINER) || defined (USE_HASHRATIO)
 bool submit_nonce2_nonce(struct thr_info *thr, struct pool *pool, struct pool *real_pool,
 			 uint32_t nonce2, uint32_t nonce,  uint32_t ntime)
 {
@@ -7488,6 +7891,39 @@ bool submit_nonce2_nonce(struct thr_info *thr, struct pool *pool, struct pool *r
 	return ret;
 }
 #endif
+
+#ifdef USE_BITMAIN_SOC
+void get_work_by_nonce2(struct thr_info *thr,
+						struct work **work,
+						struct pool *pool,
+						struct pool *real_pool,
+						uint64_t nonce2,
+						uint32_t version)
+{
+	*work = make_work();
+	const int thr_id = thr->id;
+	struct cgpu_info *cgpu = thr->cgpu;
+	struct device_drv *drv = cgpu->drv;
+	cg_wlock(&pool->data_lock);
+	pool->nonce2 = nonce2;
+	//if(pool->support_vil) // comment as default
+	version = Swap32(version);
+	cg_memcpy(pool->header_bin, &version, 4);
+	cg_wunlock(&pool->data_lock);
+
+	gen_stratum_work(pool, *work);
+
+	(*work)->pool = real_pool;
+
+	(*work)->thr_id = thr_id;
+	(*work)->work_block = work_block;
+	(*work)->pool->works++;
+
+	(*work)->mined = true;
+	(*work)->version = version;
+}
+#endif
+
 
 /* Generates stratum based work based on the most recent notify information
  * from the pool. This will keep generating work while a pool is down so we use
@@ -9228,6 +9664,20 @@ void print_summary(void)
 
 static void clean_up(bool restarting)
 {
+#ifdef USE_BITMAIN_SOC
+	struct sysinfo sInfo;
+	if (sysinfo(&sInfo))
+	{
+		applog(LOG_INFO, "Failed to get sysinfo, errno:%u, reason:%s\n",
+			   errno, strerror(errno));
+		total_tv_end_sys=time(NULL);
+	}
+	else
+	{
+		total_tv_end_sys=sInfo.uptime;
+	}
+#endif
+
 #ifdef USE_USBUTILS
 	usb_polling = false;
 	pthread_join(usb_poll_thread, NULL);
@@ -9970,6 +10420,31 @@ static void initialise_usb(void) {
 #define initialise_usb() {}
 #endif
 
+#ifdef USE_BITMAIN_SOC
+void setStartTimePoint()
+{
+	char logstr[256];
+	struct sysinfo sInfo;
+	if (sysinfo(&sInfo))
+	{
+		sprintf(logstr, "Failed to get sysinfo, errno:%u, reason:%s\n",
+				errno, strerror(errno));
+		writeInitLogFile(logstr);
+
+		total_tv_start_sys=time(NULL);
+		total_tv_end_sys=total_tv_start_sys+1;
+	}
+	else
+	{
+		total_tv_start_sys=sInfo.uptime;
+		total_tv_end_sys=total_tv_start_sys+1;
+
+		sprintf(logstr, "setStartTimePoint total_tv_start_sys=%d total_tv_end_sys=%d\n",total_tv_start_sys, total_tv_end_sys);
+		writeInitLogFile(logstr);
+	}
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 	struct sigaction handler;
@@ -10112,6 +10587,65 @@ int main(int argc, char *argv[])
 		}
 		set_target(bench_target, 32);
 	}
+
+#ifdef USE_BITMAIN_SOC
+	if(opt_version_path)
+	{
+		FILE * fpversion = fopen(opt_version_path, "rb");
+		char tmp[256] = {0};
+		int len = 0;
+		char * start = 0;
+
+		if(fpversion == NULL)
+		{
+			applog(LOG_ERR, "Open miner version file %s error", opt_version_path);
+		}
+		else
+		{
+			len = fread(tmp, 1, 256, fpversion);
+
+			if(len <= 0)
+			{
+				applog(LOG_ERR, "Read miner version file %s error %d", opt_version_path, len);
+			}
+			else
+			{
+				start = strstr(tmp, "\n");
+
+				if(start == NULL)
+				{
+					strcpy(g_miner_compiletime, tmp);
+				}
+				else
+				{
+					cg_memcpy(g_miner_compiletime, tmp, start-tmp);
+					strcpy(g_miner_type, start+1);
+				}
+
+				if(g_miner_compiletime[strlen(g_miner_compiletime)-1] == '\n')
+				{
+					g_miner_compiletime[strlen(g_miner_compiletime)-1] = 0;
+				}
+
+				if(g_miner_compiletime[strlen(g_miner_compiletime)-1] == '\r')
+				{
+					g_miner_compiletime[strlen(g_miner_compiletime)-1] = 0;
+				}
+
+				if(g_miner_type[strlen(g_miner_type)-1] == '\n')
+				{
+					g_miner_type[strlen(g_miner_type)-1] = 0;
+				}
+
+				if(g_miner_type[strlen(g_miner_type)-1] == '\r')
+				{
+					g_miner_type[strlen(g_miner_type)-1] = 0;
+				}
+			}
+		}
+		applog(LOG_ERR, "Miner compile time: %s type: %s", g_miner_compiletime, g_miner_type);
+	}
+#endif
 
 #ifdef HAVE_CURSES
 	if (opt_realquiet || opt_display_devs || opt_decode)
@@ -10346,6 +10880,21 @@ begin_bench:
 		cgpu->rolling = cgpu->total_mhashes = 0;
 	}
 
+#ifdef USE_BITMAIN_SOC
+	struct sysinfo sInfo;
+	if (sysinfo(&sInfo))
+	{
+		applog(LOG_INFO, "Failed to get sysinfo, errno:%u, reason:%s\n",
+			   errno, strerror(errno));
+		total_tv_end_sys=time(NULL);
+		total_tv_start_sys=time(NULL);
+	}
+	else
+	{
+		total_tv_end_sys=sInfo.uptime;
+		total_tv_start_sys=sInfo.uptime;
+	}
+#endif
 	cgtime(&total_tv_start);
 	cgtime(&total_tv_end);
 	cgtime(&tv_hashmeter);

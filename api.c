@@ -7,6 +7,7 @@
  * Software Foundation; either version 3 of the License, or (at your option)
  * any later version.  See COPYING for more details.
  */
+
 #define _MEMORY_DEBUG_MASTER 1
 
 #include "config.h"
@@ -32,7 +33,7 @@
 	defined(USE_MINION) || defined(USE_COINTERRA) || defined(USE_BITMINE_A1) || \
 	defined(USE_ANT_S1) || defined(USE_ANT_S2) || defined(USE_ANT_S3) || defined(USE_SP10) || \
 	defined(USE_SP30) || defined(USE_ICARUS) || defined(USE_HASHRATIO) || defined(USE_AVALON_MINER) || \
-	defined(USE_AVALON7)
+	defined(USE_AVALON7) || defined(USE_AVALON8) || defined(USE_AVALON9)
 #define HAVE_AN_ASIC 1
 #endif
 
@@ -141,9 +142,11 @@ static const char SEPARATOR = '|';
 
 static const char *APIVERSION = "3.7";
 static const char *DEAD = "Dead";
+#if defined(HAVE_AN_ASIC) || defined(HAVE_AN_FPGA)
 static const char *SICK = "Sick";
 static const char *NOSTART = "NoStart";
 static const char *INIT = "Initialising";
+#endif
 static const char *DISABLED = "Disabled";
 static const char *ALIVE = "Alive";
 static const char *REJECTING = "Rejecting";
@@ -1986,6 +1989,7 @@ static void minerconfig(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __
 		io_close(io_data);
 }
 
+#if defined(HAVE_AN_ASIC) || defined(HAVE_AN_FPGA)
 static const char *status2str(enum alive status)
 {
 	switch (status) {
@@ -2003,6 +2007,7 @@ static const char *status2str(enum alive status)
 			return UNKNOWN;
 	}
 }
+#endif
 
 #ifdef HAVE_AN_ASIC
 static void ascstatus(struct io_data *io_data, int asc, bool isjson, bool precom)
@@ -2167,10 +2172,12 @@ static void pgastatus(struct io_data *io_data, int pga, bool isjson, bool precom
 static void devstatus(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __maybe_unused char *param, bool isjson, __maybe_unused char group)
 {
 	bool io_open = false;
-	int devcount = 0;
 	int numasc = 0;
 	int numpga = 0;
+#if defined(HAVE_AN_ASIC) || defined(HAVE_AN_FPGA)
+	int devcount = 0;
 	int i;
+#endif
 
 #ifdef HAVE_AN_ASIC
 	numasc = numascs();
@@ -2217,10 +2224,12 @@ static void devstatus(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __ma
 static void edevstatus(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __maybe_unused char *param, bool isjson, __maybe_unused char group)
 {
 	bool io_open = false;
-	int devcount = 0;
 	int numasc = 0;
 	int numpga = 0;
+#if defined(HAVE_AN_ASIC) || defined(HAVE_AN_FPGA)
+	int devcount = 0;
 	int i;
+#endif
 #ifdef USE_USBUTILS
 	time_t howoldsec = 0;
 #endif
@@ -4868,6 +4877,16 @@ void mcast_init()
 	if (thr_info_create(thr, NULL, mcast_thread, thr))
 		quit(1, "API mcast thread create failed");
 }
+
+#ifdef USE_BITMAIN_SOC
+void reCalculateAVG()
+{
+	new_total_mhashes_done = total_mhashes_done;
+	if(total_secs>0)
+		new_total_secs = total_secs-1;
+	else new_total_secs=total_secs;
+}
+#endif
 
 void api(int api_thr_id)
 {

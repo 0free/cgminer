@@ -651,8 +651,8 @@ case $target in
 esac
 
 if test "x$djansson" = xno; then
-	AC_CONFIG_SUBDIRS([compat/jansson-2.9])
-	JANSSON_LIBS="compat/jansson-2.9/src/.libs/libjansson.a"
+	AC_CONFIG_SUBDIRS([compat/jansson-2.13.1])
+	JANSSON_LIBS="compat/jansson-2.13.1/src/.libs/libjansson.a"
 fi
 
 AM_CONDITIONAL([WANT_STATIC_JANSSON], [test x$djansson = xno])

@@ -1,7 +1,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-JANSSON_CPPFLAGS= -I$(top_builddir)/compat/jansson-2.9/src -I$(top_srcdir)/compat/jansson-2.9/src
+JANSSON_CPPFLAGS= -I$(top_builddir)/compat/jansson-2.13.1/src -I$(top_srcdir)/compat/jansson-2.13.1/src
 
 if WANT_USBUTILS
 USBUTILS_CPPFLAGS = `pkg-config libusb-1.0 --libs --cflags`
@@ -34,7 +34,7 @@ cgminer_LDADD	= $(DLOPEN_FLAGS) @LIBCURL_LIBS@ @JANSSON_LIBS@ @LIBZ_LIBS@ @PTHRE
 		  @LIBUSB_LIBS@ @MM_LIBS@ @RT_LIBS@ @LIBSYSTEMD_LIBS@ \
 		  @MATH_LIBS@ lib/libgnu.a ccan/libccan.a
 
-cgminer_CPPFLAGS += -I$(top_builddir)/lib -I$(top_srcdir)/lib
+cgminer_CPPFLAGS += -I$(top_builddir)/lib -I$(top_srcdir)/lib -fcommon
 
 if !HAVE_WINDOWS
 cgminer_CPPFLAGS += @LIBCURL_CFLAGS@

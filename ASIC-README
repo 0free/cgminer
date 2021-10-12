@@ -9,6 +9,8 @@ Currently supported devices include:
 - Avalon2/3
 - Avalon4/4.1/6
 - Avalon7
+- Avalon8
+- Avalon9
 - BFx2 USB
 - Butterfly Labs SC 65/28nm range
 - BF1 (bitfury) USB (red and blue)
@@ -58,6 +60,10 @@ Avalon6 will come up as AV6.
 Avalon4/4.1/6 devies need the --enable-avalon4 option when compiling cgminer.
 
 Avalon7 will come up as AV7.
+
+Avalon8 will come up as AV8.
+
+Avalon9 will come up as AV9.
 
 Klondike will come up as KLN.
 
@@ -322,6 +328,80 @@ ASIC SPECIFIC COMMANDS
 --avalon7-freqadj-temp <arg> Set Avalon7 check temperature when run into AVA7_FREQ_TEMPADJ_MODE (default: 104)
 --avalon7-nonce-mask <arg> Set A3212 nonce mask, range 24-32. (default: 31)
 --no-avalon7-asic-debug Disable A3212 debug.
+
+--avalon8-voltage-level Set Avalon8 default level of core voltage, range:[0, 15], step: 1
+--avalon8-voltage-level-offset Set Avalon8 default offset of core voltage level, range:[-2, 1], step: 1
+--avalon8-freq      Set Avalon8 default frequency, range:[25, 1200], step: 25, example: 800
+--avalon8-freq-sel <arg> Set Avalon8 default frequency select, range:[0, 3], step: 1, example: 3 (default: 3)
+--avalon8-fan       Set Avalon8 target fan speed, range:[0, 100], step: 1, example: 0-100
+--avalon8-temp <arg> Set Avalon8 target temperature, range:[0, 100] (default: 90)
+--avalon8-polling-delay <arg> Set Avalon8 polling delay value (ms) (default: 20)
+--avalon8-aucspeed <arg> Set AUC3 IIC bus speed (default: 400000)
+--avalon8-aucxdelay <arg> Set AUC3 IIC xfer read delay, 4800 ~= 1ms (default: 19200)
+--avalon8-smart-speed <arg> Set Avalon8 smart speed, range 0-1. 0 means Disable (default: 1)
+--avalon8-th-pass <arg> Set A3210 th pass value (default: -1)
+--avalon8-th-fail <arg> Set A3210 th fail value (default: -1)
+--avalon8-th-init <arg> Set A3210 th init value (default: 32767)
+--avalon8-th-ms <arg> Set A3210 th ms value (default: 5)
+--avalon8-th-timeout <arg> Set A3210 th timeout value (default: 4294967295)
+--avalon8-th-add <arg> Set A3210 th add value (default: 1)
+--avalon8-iic-detect Enable Avalon8 detect through iic controller
+--avalon8-nonce-mask <arg> Set A3210 nonce mask, range 24-32. (default: -1)
+--avalon8-nonce-check <arg> Set A3210 nonce check, range 0-1. (default: 1)
+--avalon8-roll-enable <arg> Set A3210 roll enable, range 0-1. (default: 1)
+--avalon8-mux-l2h <arg> Set Avalon8 mux l2h, range 0-2. (default: 0)
+--avalon8-mux-h2l <arg> Set Avalon8 mux h2l, range 0-1. (default: 1)
+--avalon8-h2ltime0-spd <arg> Set Avalon8 h2ltime0 spd, range 0-255. (default: 3)
+--avalon8-spdlow <arg> Set Avalon8 spdlow, range 0-3. (default: -1)
+--avalon8-spdhigh <arg> Set Avalon8 spdhigh, range 0-3. (default: 3)
+--avalon8-cinfo-asic Set Avalon8 cinfo asic index, range:[0, 25], step: 1
+--avalon8-pid-p <arg> Set Avalon8 pid-p, range 0-9999. (default: 2)
+--avalon8-pid-i <arg> Set Avalon8 pid-i, range 0-9999. (default: 5)
+--avalon8-pid-d <arg> Set Avalon8 pid-d, range 0-9999. (default: 0)
+
+--avalon9-voltage-level Set Avalon9 default level of core voltage, range:[0, 15], step: 1
+--avalon9-voltage-level-offset Set Avalon9 default offset of core voltage level, range:[-2, 1], step: 1
+--avalon9-freq      Set Avalon9 default frequency, range:[25, 1200], step: 25, example: 800
+--avalon9-freq-sel <arg> Set Avalon9 default frequency select, range:[0, 7], step: 1, example: 7 (default: 7)
+--avalon9-fan       Set Avalon9 target fan speed, range:[0, 100], step: 1, example: 0-100
+--avalon9-temp <arg> Set Avalon9 target temperature, range:[0, 100] (default: 95)
+--avalon9-polling-delay <arg> Set Avalon9 polling delay value (ms) (default: 20)
+--avalon9-aucspeed <arg> Set AUC3 IIC bus speed (default: 400000)
+--avalon9-aucxdelay <arg> Set AUC3 IIC xfer read delay, 4800 ~= 1ms (default: 24000)
+--avalon9-smart-speed <arg> Set Avalon9 smart speed, range 0-1. 0 means Disable (default: 1)
+--avalon9-th-pass <arg> Set A3206 th pass value (default: 300)
+--avalon9-th-fail <arg> Set A3206 th fail value (default: 8000)
+--avalon9-th-init <arg> Set A3206 th init value (default: 16001)
+--avalon9-th-ms <arg> Set A3206 th ms value (default: 10)
+--avalon9-th-timeout <arg> Set A3206 th timeout value (default: 55000)
+--avalon9-th-add <arg> Set A3206 th add value (default: 0)
+--avalon9-th-mssel <arg> Set A3206 th mssel value (default: 0)
+--avalon9-lv2-th-add <arg> Set A3206 lv2 th add value (default: 0)
+--avalon9-lv2-th-ms <arg> Set A3206 lv2 th ms value (default: 0)
+--avalon9-lv3-th-add <arg> Set A3206 lv3 th add value (default: 0)
+--avalon9-lv3-th-ms <arg> Set A3206 lv3 th ms value (default: 0)
+--avalon9-lv4-th-add <arg> Set A3206 lv4 th add value (default: 0)
+--avalon9-lv4-th-ms <arg> Set A3206 lv4 th ms value (default: 0)
+--avalon9-lv5-th-add <arg> Set A3206 lv5 th add value (default: 0)
+--avalon9-lv5-th-ms <arg> Set A3206 lv5 th ms value (default: 0)
+--avalon9-lv6-th-add <arg> Set A3206 lv6 th add value (default: 0)
+--avalon9-lv6-th-ms <arg> Set A3206 lv6 th ms value (default: 0)
+--avalon9-lv7-th-add <arg> Set A3206 lv7 th add value (default: 0)
+--avalon9-lv7-th-ms <arg> Set A3206 lv7 th ms value (default: 0)
+--avalon9-iic-detect Enable Avalon9 detect through iic controller
+--avalon9-nonce-mask <arg> Set A3206 nonce mask, range 24-32. (default: 24)
+--avalon9-nonce-check <arg> Set A3206 nonce check, range 0-1. (default: 1)
+--avalon9-roll-enable <arg> Set A3206 roll enable, range 0-1. (default: 1)
+--avalon9-mux-l2h <arg> Set Avalon9 mux l2h, range 0-2. (default: 0)
+--avalon9-mux-h2l <arg> Set Avalon9 mux h2l, range 0-1. (default: 1)
+--avalon9-h2ltime0-spd <arg> Set Avalon9 h2ltime0 spd, range 0-255. (default: 3)
+--avalon9-spdlow <arg> Set Avalon9 spdlow, range 0-7. (default: 6)
+--avalon9-spdhigh <arg> Set Avalon9 spdhigh, range 0-7. (default: 7)
+--avalon9-tbase <arg> Set Avalon9 tbase and use (0-8) bits, range 0-255. (default: 0)
+--avalon9-pid-p <arg> Set Avalon9 pid-p, range 0-9999. (default: 1)
+--avalon9-pid-i <arg> Set Avalon9 pid-i, range 0-9999. (default: 5)
+--avalon9-pid-d <arg> Set Avalon9 pid-d, range 0-9999. (default: 0)
+
 --bab-options <arg> Set BaB options max:def:min:up:down:hz:delay:trf
 --bet-clk <arg>     Set clockspeed of ASICMINER Tube/Prisma to (arg+1)*10MHz (default: 23)
 --bflsc-overheat <arg> Set overheat temperature where BFLSC devices throttle, 0 to disable (default: 90)
@@ -646,6 +726,83 @@ Avalon7 Devices
 --avalon7-freqadj-temp <arg> Set Avalon7 check temperature when run into AVA7_FREQ_TEMPADJ_MODE (default: 104)
 --avalon7-nonce-mask <arg> Set A3212 nonce mask, range 24-32. (default: 31)
 --no-avalon7-asic-debug Disable A3212 debug.
+
+Avalon8 Devices
+
+--avalon8-voltage-level Set Avalon8 default level of core voltage, range:[0, 15], step: 1
+--avalon8-voltage-level-offset Set Avalon8 default offset of core voltage level, range:[-2, 1], step: 1
+--avalon8-freq      Set Avalon8 default frequency, range:[25, 1200], step: 25, example: 800
+--avalon8-freq-sel <arg> Set Avalon8 default frequency select, range:[0, 3], step: 1, example: 3 (default: 3)
+--avalon8-fan       Set Avalon8 target fan speed, range:[0, 100], step: 1, example: 0-100
+--avalon8-temp <arg> Set Avalon8 target temperature, range:[0, 100] (default: 90)
+--avalon8-polling-delay <arg> Set Avalon8 polling delay value (ms) (default: 20)
+--avalon8-aucspeed <arg> Set AUC3 IIC bus speed (default: 400000)
+--avalon8-aucxdelay <arg> Set AUC3 IIC xfer read delay, 4800 ~= 1ms (default: 19200)
+--avalon8-smart-speed <arg> Set Avalon8 smart speed, range 0-1. 0 means Disable (default: 1)
+--avalon8-th-pass <arg> Set A3210 th pass value (default: -1)
+--avalon8-th-fail <arg> Set A3210 th fail value (default: -1)
+--avalon8-th-init <arg> Set A3210 th init value (default: 32767)
+--avalon8-th-ms <arg> Set A3210 th ms value (default: 5)
+--avalon8-th-timeout <arg> Set A3210 th timeout value (default: 4294967295)
+--avalon8-th-add <arg> Set A3210 th add value (default: 1)
+--avalon8-iic-detect Enable Avalon8 detect through iic controller
+--avalon8-nonce-mask <arg> Set A3210 nonce mask, range 24-32. (default: -1)
+--avalon8-nonce-check <arg> Set A3210 nonce check, range 0-1. (default: 1)
+--avalon8-roll-enable <arg> Set A3210 roll enable, range 0-1. (default: 1)
+--avalon8-mux-l2h <arg> Set Avalon8 mux l2h, range 0-2. (default: 0)
+--avalon8-mux-h2l <arg> Set Avalon8 mux h2l, range 0-1. (default: 1)
+--avalon8-h2ltime0-spd <arg> Set Avalon8 h2ltime0 spd, range 0-255. (default: 3)
+--avalon8-spdlow <arg> Set Avalon8 spdlow, range 0-3. (default: -1)
+--avalon8-spdhigh <arg> Set Avalon8 spdhigh, range 0-3. (default: 3)
+--avalon8-cinfo-asic Set Avalon8 cinfo asic index, range:[0, 25], step: 1
+--avalon8-pid-p <arg> Set Avalon8 pid-p, range 0-9999. (default: 2)
+--avalon8-pid-i <arg> Set Avalon8 pid-i, range 0-9999. (default: 5)
+--avalon8-pid-d <arg> Set Avalon8 pid-d, range 0-9999. (default: 0)
+
+Avalon9 Devices
+
+--avalon9-voltage-level Set Avalon9 default level of core voltage, range:[0, 15], step: 1
+--avalon9-voltage-level-offset Set Avalon9 default offset of core voltage level, range:[-2, 1], step: 1
+--avalon9-freq      Set Avalon9 default frequency, range:[25, 1200], step: 25, example: 800
+--avalon9-freq-sel <arg> Set Avalon9 default frequency select, range:[0, 7], step: 1, example: 7 (default: 7)
+--avalon9-fan       Set Avalon9 target fan speed, range:[0, 100], step: 1, example: 0-100
+--avalon9-temp <arg> Set Avalon9 target temperature, range:[0, 100] (default: 95)
+--avalon9-polling-delay <arg> Set Avalon9 polling delay value (ms) (default: 20)
+--avalon9-aucspeed <arg> Set AUC3 IIC bus speed (default: 400000)
+--avalon9-aucxdelay <arg> Set AUC3 IIC xfer read delay, 4800 ~= 1ms (default: 24000)
+--avalon9-smart-speed <arg> Set Avalon9 smart speed, range 0-1. 0 means Disable (default: 1)
+--avalon9-th-pass <arg> Set A3206 th pass value (default: 300)
+--avalon9-th-fail <arg> Set A3206 th fail value (default: 8000)
+--avalon9-th-init <arg> Set A3206 th init value (default: 16001)
+--avalon9-th-ms <arg> Set A3206 th ms value (default: 10)
+--avalon9-th-timeout <arg> Set A3206 th timeout value (default: 55000)
+--avalon9-th-add <arg> Set A3206 th add value (default: 0)
+--avalon9-th-mssel <arg> Set A3206 th mssel value (default: 0)
+--avalon9-lv2-th-add <arg> Set A3206 lv2 th add value (default: 0)
+--avalon9-lv2-th-ms <arg> Set A3206 lv2 th ms value (default: 0)
+--avalon9-lv3-th-add <arg> Set A3206 lv3 th add value (default: 0)
+--avalon9-lv3-th-ms <arg> Set A3206 lv3 th ms value (default: 0)
+--avalon9-lv4-th-add <arg> Set A3206 lv4 th add value (default: 0)
+--avalon9-lv4-th-ms <arg> Set A3206 lv4 th ms value (default: 0)
+--avalon9-lv5-th-add <arg> Set A3206 lv5 th add value (default: 0)
+--avalon9-lv5-th-ms <arg> Set A3206 lv5 th ms value (default: 0)
+--avalon9-lv6-th-add <arg> Set A3206 lv6 th add value (default: 0)
+--avalon9-lv6-th-ms <arg> Set A3206 lv6 th ms value (default: 0)
+--avalon9-lv7-th-add <arg> Set A3206 lv7 th add value (default: 0)
+--avalon9-lv7-th-ms <arg> Set A3206 lv7 th ms value (default: 0)
+--avalon9-iic-detect Enable Avalon9 detect through iic controller
+--avalon9-nonce-mask <arg> Set A3206 nonce mask, range 24-32. (default: 24)
+--avalon9-nonce-check <arg> Set A3206 nonce check, range 0-1. (default: 1)
+--avalon9-roll-enable <arg> Set A3206 roll enable, range 0-1. (default: 1)
+--avalon9-mux-l2h <arg> Set Avalon9 mux l2h, range 0-2. (default: 0)
+--avalon9-mux-h2l <arg> Set Avalon9 mux h2l, range 0-1. (default: 1)
+--avalon9-h2ltime0-spd <arg> Set Avalon9 h2ltime0 spd, range 0-255. (default: 3)
+--avalon9-spdlow <arg> Set Avalon9 spdlow, range 0-7. (default: 6)
+--avalon9-spdhigh <arg> Set Avalon9 spdhigh, range 0-7. (default: 7)
+--avalon9-tbase <arg> Set Avalon9 tbase and use (0-8) bits, range 0-255. (default: 0)
+--avalon9-pid-p <arg> Set Avalon9 pid-p, range 0-9999. (default: 1)
+--avalon9-pid-i <arg> Set Avalon9 pid-i, range 0-9999. (default: 5)
+--avalon9-pid-d <arg> Set Avalon9 pid-d, range 0-9999. (default: 0)
 
 BFLSC Devices
 

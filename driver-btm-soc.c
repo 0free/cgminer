@@ -11255,7 +11255,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
     static void bitmain_soc_detect(__maybe_unused bool hotplug)
     {
         struct cgpu_info *cgpu = calloc(1, sizeof(*cgpu));
-        extern struct device_drv *drv = &bitmain_soc_drv;
+        struct device_drv *drv = &bitmain_soc_drv;
         struct bitmain_soc_info *a;
 
         assert(cgpu);
@@ -12064,7 +12064,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
     }
 
 
-    extern struct device_drv bitmain_soc_drv =
+    struct device_drv bitmain_soc_drv =
     {
         .drv_id = DRIVER_bitmain_soc,
         .dname = "Bitmain_SOC",

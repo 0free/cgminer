@@ -1,5 +1,5 @@
 SUBDIRS =
 
 if WANT_STATIC_JANSSON
-SUBDIRS	+= jansson-2.9
+SUBDIRS	+= jansson-2.13.1
 endif

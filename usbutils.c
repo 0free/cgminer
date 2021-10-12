@@ -1543,7 +1543,7 @@ static void cgusb_check_init()
 	if (stats_initialised == false) {
 		// N.B. environment LIBUSB_DEBUG also sets libusb_set_debug()
 		if (opt_usbdump >= 0) {
-			libusb_set_debug(NULL, opt_usbdump);
+			libusb_set_option(NULL, opt_usbdump);
 			usb_all(opt_usbdump);
 		}
 		stats_initialised = true;

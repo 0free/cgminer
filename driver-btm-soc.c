@@ -12064,7 +12064,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
     }
 
 
-    struct device_drv bitmain_soc_drv =
+    extern struct device_drv bitmain_soc_drv =
     {
         .drv_id = DRIVER_bitmain_soc,
         .dname = "Bitmain_SOC",

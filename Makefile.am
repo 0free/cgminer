@@ -28,11 +28,12 @@ cgminer_CPPFLAGS = $(PTHREAD_FLAGS) -fno-strict-aliasing $(JANSSON_CPPFLAGS) $(U
 
 bin_PROGRAMS	= cgminer
 
-cgminer_LDFLAGS	= $(PTHREAD_FLAGS) -L$(STAGING_DIR)/usr/lib
+cgminer_LDFLAGS	= $(PTHREAD_FLAGS)
 cgminer_LDADD	= $(DLOPEN_FLAGS) @LIBCURL_LIBS@ @JANSSON_LIBS@ @LIBZ_LIBS@ @PTHREAD_LIBS@ \
 		  @NCURSES_LIBS@ @PDCURSES_LIBS@ @WS2_LIBS@ \
 		  @LIBUSB_LIBS@ @MM_LIBS@ @RT_LIBS@ @LIBSYSTEMD_LIBS@ \
-		  @MATH_LIBS@ lib/libgnu.a ccan/libccan.a
+		  @MATH_LIBS@ lib/libgnu.a ccan/libccan.a \
+		  $(STAGING_DIR)/usr/lib/libz.so.1
 
 cgminer_CPPFLAGS += -I$(top_builddir)/lib -I$(top_srcdir)/lib -fcommon
 
